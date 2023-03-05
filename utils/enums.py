@@ -1,7 +1,12 @@
 from enum import Enum
 
 
-class Interval(str, Enum):
+class StrEnumMixin(Enum):
+    def __str__(self):
+        return self.value
+
+
+class Interval(StrEnumMixin):
     SECOND = "1s"
     MINUTE = "1m"
     FIVE_MINUTE = "5m"

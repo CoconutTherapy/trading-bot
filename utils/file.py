@@ -1,10 +1,9 @@
 import os
 import zipfile
 
-import requests
-
 import settings
 from utils.logs import logger
+import aiohttp
 
 
 def merge_files(files, target):
@@ -16,18 +15,23 @@ def merge_files(files, target):
     return target
 
 
-def download_file(url, filename, force=False):
+async def download_file(url, filename, force=False):
     fp = settings.raw_files_dir / filename
     if force or not os.path.exists(fp):
         logger.info(f"Downloading {filename}")
-        with open(fp, "wb") as f:
-            response = requests.get(url)
-            f.write(response.content)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if not response.ok:
+                    logger.error(f"Error downloading {filename}")
+                    return False
+                body = await response.read()
+                with open(fp, "wb") as f:
+                    f.write(body)
+                return True
+    return True
 
-    return fp
 
-
-def unzip_file(filename, force=False):
+async def unzip_file(filename, force=False):
     target = settings.csv_files_dir / (filename.replace(".zip", ".csv"))
     try:
         if force or not os.path.exists(target):
